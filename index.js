@@ -12,7 +12,10 @@ function getDependenciesTree(packageObject){
 
 	const flatTree = chain();
 
-	return iteratePackage(packageObject);
+	return iteratePackage(packageObject).then(result => {
+		scheduler.flush();
+		return result;
+	});
 
 	function iteratePackage(packageObject){
 
