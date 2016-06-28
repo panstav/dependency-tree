@@ -7,6 +7,7 @@ const chain = require('./lib/packages-chain');
 const scheduler = require('./lib/scheduler');
 
 module.exports = getDependenciesTree;
+module.exports.strategies = ['cache_after_iteration', 'cache_and_iterate', 'cache_then_iterate'];
 
 function getDependenciesTree(packageObject, options){
 
