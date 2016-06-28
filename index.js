@@ -8,12 +8,17 @@ const scheduler = require('./lib/scheduler');
 
 module.exports = getDependenciesTree;
 
-function getDependenciesTree(packageObject){
+function getDependenciesTree(packageObject, options){
+
+	options = options || {};
 
 	const flatTree = chain();
 
 	return iteratePackage(packageObject).then(result => {
-		scheduler.flush();
+		if (!options.strategy || options.strategy === 'cache_after_iteration'){
+			scheduler.flush();
+		}
+
 		return result;
 	});
 
@@ -34,18 +39,26 @@ function getDependenciesTree(packageObject){
 
 		function handleNewDependencies(dependencies){
 
-			// strategy one - schedule putOpt for after the current chain and continue
-			scheduler.add(db.dependencies.set.bind(null, packageObject.name, packageObject.version, dependencies));
-			return dependencies;
+			// default - schedule putOpt for after the current chain and continue
+			if (!options.strategy || options.strategy === 'cache_after_iteration'){
+				scheduler.add(db.dependencies.set.bind(null, packageObject.name, packageObject.version, dependencies));
+				return dependencies;
+			};
 
-			// // strategy two - save now but don't wait for it to resolve, continue chain immediately
-			// db.dependencies.set(packageObject.name, packageObject.version, dependencies);
-			// return dependencies;
+			// save now but don't wait for it to resolve, continue chain immediately
+			if (options.strategy === 'cache_and_iterate'){
+				db.dependencies.set(packageObject.name, packageObject.version, dependencies);
+				return dependencies;
+			};
 
-			// // strategy three - save now and continue when putOpt is confirmed
-			// return db.dependencies.set(packageObject.name, packageObject.version, dependencies).then(() => {
-			// 	return dependencies;
-			// });
+			// save now and continue when putOpt is confirmed
+			if (options.strategy === 'cache_then_iterate'){
+				return db.dependencies.set(packageObject.name, packageObject.version, dependencies).then(() => {
+					return dependencies;
+				});
+			}
+
+			throw new Error(`Unknown strategy ${options.strategy}`);
 
 		}
 
