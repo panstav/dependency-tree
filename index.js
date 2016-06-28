@@ -28,7 +28,8 @@ function getDependenciesTree(packageObject, options){
 			stats: {
 				uniquePackages: flatTree.length,
 				requestsOverNetwork: queryCount
-			}
+			},
+			flatTree
 		};
 
 	});
