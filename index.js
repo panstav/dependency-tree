@@ -14,21 +14,33 @@ function getDependenciesTree(packageObject, options){
 	options = options || {};
 
 	const flatTree = chain();
+	var queryCount = 0;
 
 	return iteratePackage(packageObject).then(result => {
 		if (!options.strategy || options.strategy === 'cache_after_iteration'){
 			scheduler.flush();
 		}
 
-		return result;
+		return {
+			name: result.name,
+			version: result.version,
+			deps: result.deps,
+			stats: {
+				uniquePackages: flatTree.length,
+				requestsOverNetwork: queryCount
+			}
+		};
+
 	});
 
 	function iteratePackage(packageObject){
 
 		return Promise.resolve(resolveVersion(packageObject.name, packageObject.version))
-			.then(strictVersion => {
+			.then(versionObject => {
 
-				packageObject.version = strictVersion;
+				packageObject.version = versionObject.version;
+
+				if (versionObject.queried) queryCount++;
 
 				if (!flatTree.unique(packageObject)) return { name: packageObject.name, version: packageObject.version, skip: true };
 				flatTree.append(packageObject);
@@ -39,6 +51,8 @@ function getDependenciesTree(packageObject, options){
 			});
 
 		function handleNewDependencies(dependencies){
+
+			queryCount++;
 
 			// default - schedule putOpt for after the current chain and continue
 			if (!options.strategy || options.strategy === 'cache_after_iteration'){
