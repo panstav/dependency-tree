@@ -29,7 +29,7 @@ function getDependenciesTree(packageObject, options){
 				uniquePackages: flatTree.length,
 				requestsOverNetwork: queryCount
 			},
-			flatTree
+			flatTree: flatTree.chain
 		};
 
 	});
